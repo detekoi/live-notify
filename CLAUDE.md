@@ -8,6 +8,8 @@
 
 ## Installation
 - Install dependencies: `pip install -r requirements.txt`
+- Copy `config.template.json` to `config.json` and add your credentials
+- NOTE: `config.json` contains sensitive API keys and should never be committed
 
 ## Code Style Guidelines
 - **Imports**: Standard library first, third-party next, local modules last

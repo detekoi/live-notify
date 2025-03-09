@@ -1,0 +1,30 @@
+{
+  "twitch": {
+    "client_id": "YOUR_TWITCH_CLIENT_ID",
+    "client_secret": "YOUR_TWITCH_CLIENT_SECRET", 
+    "channel_name": "CHANNEL_TO_MONITOR"
+  },
+  "discord": {
+    "webhook_url": "YOUR_DISCORD_WEBHOOK_URL"
+  },
+  "notification": {
+    "message_template": "🔴 **LIVE NOW!** {streamer} is streaming {game}",
+    "content_text": "",
+    "include_title": true,
+    "include_game": true,
+    "include_viewer_count": true,
+    "include_thumbnail": true,
+    "include_channel_link": true,
+    "embed_color": "FF0000",
+    "notify_on_game_change": false
+  },
+  "polling": {
+    "interval_seconds": 60,
+    "offline_check_multiplier": 3,
+    "notification_cooldown_minutes": 15
+  },
+  "advanced": {
+    "viewer_milestone_notifications": [50, 100, 500, 1000],
+    "silent_mode": false
+  }
+}

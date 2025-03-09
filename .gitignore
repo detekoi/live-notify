@@ -1,0 +1,22 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Sensitive configuration files
+config.json
+
+# Runtime files
+stream_state.json
+
+# Environment & dependencies
+venv/
+env/
+.env
+__pycache__/
+*.py[cod]
+*$py.class

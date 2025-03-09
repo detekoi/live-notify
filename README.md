@@ -19,13 +19,20 @@ A Python script that polls the Twitch API to detect when a channel goes live and
    pip install -r requirements.txt
    ```
 
-2. Configure the `config.json` file with your:
+2. Create your configuration file:
+   ```
+   cp config.template.json config.json
+   ```
+
+3. Edit the `config.json` file with your:
    - Twitch API credentials (client ID and secret)
    - Discord webhook URL
    - Channel name to monitor
    - Notification preferences
+   
+   **IMPORTANT**: Never commit your `config.json` with real credentials
 
-3. Run the script:
+4. Run the script:
    ```
    python twitch_discord_notifier.py
    ```
