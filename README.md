@@ -97,4 +97,4 @@ If you encounter errors with Twitch authentication:
 
 ## License
 
-This project is open-source. Feel free to modify and use it as needed.
+This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
