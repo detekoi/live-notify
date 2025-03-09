@@ -172,7 +172,7 @@ class TwitchStreamInfo:
             "description": self.format_message(config['notification']['message_template']),
             "url": self.url,
             "color": int(config['notification']['embed_color'], 16) if 'embed_color' in config['notification'] else 0xFF0000,
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "footer": {
                 "text": "Twitch Stream Notification"
             },
