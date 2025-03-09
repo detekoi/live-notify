@@ -1,4 +1,4 @@
-# Twitch Stream Discord Notifier
+# Live Notify for Twitch and Discord
 
 A Python script that polls the Twitch API to detect when a channel goes live and sends customized notifications to a Discord webhook.
 

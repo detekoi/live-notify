@@ -1,4 +1,4 @@
-# CLAUDE.md - Discord Notify Project Guidelines
+# CLAUDE.md - Live Notify for Twitch and Discord Project Guidelines
 
 ## Run Commands
 - Run notifier: `python twitch_discord_notifier.py`

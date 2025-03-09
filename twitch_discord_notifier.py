@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Twitch Stream Discord Notifier
+Live Notify for Twitch and Discord
 
 A script that polls Twitch API to detect when a channel goes live
 and sends customized notifications to a Discord webhook.
@@ -20,7 +20,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger('TwitchDiscordNotifier')
+logger = logging.getLogger('LiveNotify')
 
 class TwitchAPI:
     """Handle authentication and API calls to Twitch"""
@@ -376,7 +376,7 @@ def load_config(config_path: str = "config.json") -> Dict[str, Any]:
 
 def main():
     """Main function to run the notifier"""
-    parser = argparse.ArgumentParser(description="Twitch Stream Discord Notifier")
+    parser = argparse.ArgumentParser(description="Live Notify for Twitch and Discord")
     parser.add_argument("--config", default="config.json", help="Path to config file")
     parser.add_argument("--test", action="store_true", help="Send a test notification")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
