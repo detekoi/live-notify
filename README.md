@@ -83,8 +83,6 @@ TWITCH_CHANNEL_NAME=channel_to_monitor
 DISCORD_WEBHOOK_URL=your_webhook_url
 ```
 
-All other settings can be customized through the config file. For advanced users who prefer to set everything through environment variables, see the `.env.template` file for all available options.
-
 #### Making Environment Variables Permanent
 
 To avoid setting environment variables each time you open a new terminal:
