@@ -19,29 +19,103 @@ A Python script that polls the Twitch API to detect when a channel goes live and
    pip install -r requirements.txt
    ```
 
-2. Create your configuration file:
+2. Configure your settings using either environment variables or a config file:
+
+   **Option 1 (Recommended for Security): Using Environment Variables**
+   
+   You can set the essential environment variables directly in your terminal:
+   
+   * **Windows Command Prompt**:
+     ```
+     set TWITCH_CLIENT_ID=your_client_id
+     set TWITCH_CLIENT_SECRET=your_client_secret
+     set TWITCH_CHANNEL_NAME=channel_to_monitor
+     set DISCORD_WEBHOOK_URL=your_webhook_url
+     ```
+   
+   * **Windows PowerShell**:
+     ```
+     $env:TWITCH_CLIENT_ID="your_client_id"
+     $env:TWITCH_CLIENT_SECRET="your_client_secret"
+     $env:TWITCH_CHANNEL_NAME="channel_to_monitor"
+     $env:DISCORD_WEBHOOK_URL="your_webhook_url"
+     ```
+   
+   * **macOS/Linux**:
+     ```
+     export TWITCH_CLIENT_ID=your_client_id
+     export TWITCH_CLIENT_SECRET=your_client_secret
+     export TWITCH_CHANNEL_NAME=channel_to_monitor
+     export DISCORD_WEBHOOK_URL=your_webhook_url
+     ```
+   
+   After setting these variables, run the script in the same terminal session.
+   
+   **Option 2: Using Config File**
+   
+   If you prefer using a config file:
    ```
    cp config.template.json config.json
    ```
-
-3. Edit the `config.json` file with your:
-   - Twitch API credentials (client ID and secret)
-   - Discord webhook URL
-   - Channel name to monitor
-   - Notification preferences
    
-   **IMPORTANT**: Never commit your `config.json` with real credentials
+   Then edit `config.json` with your favorite text editor and add your credentials.
+   
+   **IMPORTANT**: Never commit files with real credentials to public repositories
 
-4. Run the script:
+3. Run the script:
    ```
    python twitch_discord_notifier.py
    ```
 
 ## Configuration
 
-Edit the `config.json` file to customize your notification settings.
+You can customize the notifier using environment variables (recommended) or a config file. Environment variables take precedence over the config file if both are present.
 
-**Important**: The example credentials in the repository are not valid. You must replace them with your own:
+### Environment Variables
+
+The following environment variables are essential for using the application:
+
+**Required Settings:**
+```
+TWITCH_CLIENT_ID=your_client_id
+TWITCH_CLIENT_SECRET=your_client_secret
+TWITCH_CHANNEL_NAME=channel_to_monitor
+DISCORD_WEBHOOK_URL=your_webhook_url
+```
+
+All other settings can be customized through the config file. For advanced users who prefer to set everything through environment variables, see the `.env.template` file for all available options.
+
+#### Making Environment Variables Permanent
+
+To avoid setting environment variables each time you open a new terminal:
+
+* **Windows**:
+  1. Search for "Environment Variables" in the Start menu
+  2. Click "Edit the system environment variables"
+  3. Click "Environment Variables" button
+  4. Under "User variables", click "New" to add each variable
+
+* **macOS**:
+  Add to your `~/.zshrc` or `~/.bash_profile`:
+  ```
+  export TWITCH_CLIENT_ID=your_client_id
+  export TWITCH_CLIENT_SECRET=your_client_secret
+  export TWITCH_CHANNEL_NAME=channel_to_monitor
+  export DISCORD_WEBHOOK_URL=your_webhook_url
+  ```
+
+* **Linux**:
+  Add to your `~/.bashrc` or equivalent shell config file:
+  ```
+  export TWITCH_CLIENT_ID=your_client_id
+  export TWITCH_CLIENT_SECRET=your_client_secret
+  export TWITCH_CHANNEL_NAME=channel_to_monitor
+  export DISCORD_WEBHOOK_URL=your_webhook_url
+  ```
+
+### Config File
+
+Alternatively, you can use a `config.json` file with this structure:
 
 ```json
 {

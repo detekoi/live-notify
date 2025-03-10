@@ -14,6 +14,7 @@ import argparse
 import datetime
 import requests
 from typing import Dict, List, Optional, Any
+from dotenv import load_dotenv
 
 # Set up logging
 logging.basicConfig(
@@ -339,39 +340,81 @@ class StreamState:
 
 
 def load_config(config_path: str = "config.json") -> Dict[str, Any]:
-    """Load configuration from JSON file"""
-    try:
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-            
-        # Set default values for any missing config options
-        if 'notification' not in config:
-            config['notification'] = {}
-            
-        if 'message_template' not in config['notification']:
-            config['notification']['message_template'] = "🔴 **LIVE NOW!** {streamer} is streaming {game}"
-            
-        if 'polling' not in config:
-            config['polling'] = {}
-            
-        if 'interval_seconds' not in config['polling']:
-            config['polling']['interval_seconds'] = 60
-            
-        if 'advanced' not in config:
-            config['advanced'] = {}
-            
-        logger.info("Configuration loaded successfully")
-        return config
-    except Exception as e:
-        logger.error(f"Failed to load config: {e}")
-        logger.info("Using default configuration")
-        return {
-            "twitch": {"client_id": "", "client_secret": "", "channel_name": ""},
-            "discord": {"webhook_url": ""},
-            "notification": {"message_template": "🔴 **LIVE NOW!**", "include_title": True},
-            "polling": {"interval_seconds": 60},
-            "advanced": {}
+    """Load configuration from JSON file and environment variables"""
+    # Load environment variables from .env file if it exists
+    load_dotenv()
+    
+    config = {
+        "twitch": {
+            "client_id": os.environ.get("TWITCH_CLIENT_ID", ""),
+            "client_secret": os.environ.get("TWITCH_CLIENT_SECRET", ""),
+            "channel_name": os.environ.get("TWITCH_CHANNEL_NAME", "")
+        },
+        "discord": {
+            "webhook_url": os.environ.get("DISCORD_WEBHOOK_URL", "")
+        },
+        "notification": {
+            "message_template": os.environ.get(
+                "NOTIFICATION_MESSAGE_TEMPLATE", 
+                "🔴 **LIVE NOW!** {streamer} is streaming {game}"
+            ),
+            "content_text": os.environ.get("NOTIFICATION_CONTENT_TEXT", ""),
+            "include_title": os.environ.get("NOTIFICATION_INCLUDE_TITLE", "true").lower() == "true",
+            "include_game": os.environ.get("NOTIFICATION_INCLUDE_GAME", "true").lower() == "true",
+            "include_viewer_count": os.environ.get("NOTIFICATION_INCLUDE_VIEWER_COUNT", "true").lower() == "true",
+            "include_thumbnail": os.environ.get("NOTIFICATION_INCLUDE_THUMBNAIL", "true").lower() == "true",
+            "include_channel_link": os.environ.get("NOTIFICATION_INCLUDE_CHANNEL_LINK", "true").lower() == "true",
+            "embed_color": os.environ.get("NOTIFICATION_EMBED_COLOR", "FF0000"),
+            "notify_on_game_change": os.environ.get("NOTIFICATION_NOTIFY_ON_GAME_CHANGE", "false").lower() == "true"
+        },
+        "polling": {
+            "interval_seconds": int(os.environ.get("POLLING_INTERVAL_SECONDS", "60")),
+            "offline_check_multiplier": int(os.environ.get("POLLING_OFFLINE_CHECK_MULTIPLIER", "3")),
+            "notification_cooldown_minutes": int(os.environ.get("POLLING_NOTIFICATION_COOLDOWN_MINUTES", "15"))
+        },
+        "advanced": {
+            "viewer_milestone_notifications": [int(x) for x in os.environ.get("ADVANCED_VIEWER_MILESTONE_NOTIFICATIONS", "50,100,500,1000").split(",") if x.strip()],
+            "silent_mode": os.environ.get("ADVANCED_SILENT_MODE", "false").lower() == "true"
         }
+    }
+    
+    # Try to load config from file and merge with environment variables
+    try:
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                file_config = json.load(f)
+                
+            # Merge file config with env vars (env vars take precedence)
+            def merge_configs(target, source, prefix=""):
+                for key, value in source.items():
+                    env_key = f"{prefix}_{key}".upper() if prefix else key.upper()
+                    if isinstance(value, dict):
+                        if key not in target:
+                            target[key] = {}
+                        merge_configs(target[key], value, env_key)
+                    else:
+                        # Only use file value if env var wasn't set
+                        if key not in target or (isinstance(target[key], str) and target[key] == ""):
+                            target[key] = value
+            
+            # Deep merge configs
+            for section in file_config:
+                if section not in config:
+                    config[section] = {}
+                if isinstance(file_config[section], dict):
+                    merge_configs(config[section], file_config[section], section)
+                else:
+                    if section not in os.environ:  # Only use if not in env
+                        config[section] = file_config[section]
+            
+            logger.info(f"Configuration loaded from {config_path} and environment variables")
+        else:
+            logger.info("Configuration loaded from environment variables only")
+    except Exception as e:
+        logger.error(f"Failed to load config file: {e}")
+        logger.info("Using configuration from environment variables only")
+    
+    return config
 
 
 def main():
