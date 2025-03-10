@@ -344,76 +344,57 @@ def load_config(config_path: str = "config.json") -> Dict[str, Any]:
     # Load environment variables from .env file if it exists
     load_dotenv()
     
-    config = {
-        "twitch": {
-            "client_id": os.environ.get("TWITCH_CLIENT_ID", ""),
-            "client_secret": os.environ.get("TWITCH_CLIENT_SECRET", ""),
-            "channel_name": os.environ.get("TWITCH_CHANNEL_NAME", "")
-        },
-        "discord": {
-            "webhook_url": os.environ.get("DISCORD_WEBHOOK_URL", "")
-        },
-        "notification": {
-            "message_template": os.environ.get(
-                "NOTIFICATION_MESSAGE_TEMPLATE", 
-                "🔴 **LIVE NOW!** {streamer} is streaming {game}"
-            ),
-            "content_text": os.environ.get("NOTIFICATION_CONTENT_TEXT", ""),
-            "include_title": os.environ.get("NOTIFICATION_INCLUDE_TITLE", "true").lower() == "true",
-            "include_game": os.environ.get("NOTIFICATION_INCLUDE_GAME", "true").lower() == "true",
-            "include_viewer_count": os.environ.get("NOTIFICATION_INCLUDE_VIEWER_COUNT", "true").lower() == "true",
-            "include_thumbnail": os.environ.get("NOTIFICATION_INCLUDE_THUMBNAIL", "true").lower() == "true",
-            "include_channel_link": os.environ.get("NOTIFICATION_INCLUDE_CHANNEL_LINK", "true").lower() == "true",
-            "embed_color": os.environ.get("NOTIFICATION_EMBED_COLOR", "FF0000"),
-            "notify_on_game_change": os.environ.get("NOTIFICATION_NOTIFY_ON_GAME_CHANGE", "false").lower() == "true"
-        },
-        "polling": {
-            "interval_seconds": int(os.environ.get("POLLING_INTERVAL_SECONDS", "60")),
-            "offline_check_multiplier": int(os.environ.get("POLLING_OFFLINE_CHECK_MULTIPLIER", "3")),
-            "notification_cooldown_minutes": int(os.environ.get("POLLING_NOTIFICATION_COOLDOWN_MINUTES", "15"))
-        },
-        "advanced": {
-            "viewer_milestone_notifications": [int(x) for x in os.environ.get("ADVANCED_VIEWER_MILESTONE_NOTIFICATIONS", "50,100,500,1000").split(",") if x.strip()],
-            "silent_mode": os.environ.get("ADVANCED_SILENT_MODE", "false").lower() == "true"
-        }
-    }
-    
-    # Try to load config from file and merge with environment variables
+    # First, load config from file if it exists
+    file_config = {}
     try:
         if os.path.exists(config_path):
             with open(config_path, 'r') as f:
                 file_config = json.load(f)
-                
-            # Merge file config with env vars (env vars take precedence)
-            def merge_configs(target, source, prefix=""):
-                for key, value in source.items():
-                    env_key = f"{prefix}_{key}".upper() if prefix else key.upper()
-                    if isinstance(value, dict):
-                        if key not in target:
-                            target[key] = {}
-                        merge_configs(target[key], value, env_key)
-                    else:
-                        # Only use file value if env var wasn't set
-                        if key not in target or (isinstance(target[key], str) and target[key] == ""):
-                            target[key] = value
-            
-            # Deep merge configs
-            for section in file_config:
-                if section not in config:
-                    config[section] = {}
-                if isinstance(file_config[section], dict):
-                    merge_configs(config[section], file_config[section], section)
-                else:
-                    if section not in os.environ:  # Only use if not in env
-                        config[section] = file_config[section]
-            
-            logger.info(f"Configuration loaded from {config_path} and environment variables")
+            logger.info(f"Configuration loaded from {config_path}")
         else:
-            logger.info("Configuration loaded from environment variables only")
+            logger.info(f"Config file {config_path} not found")
     except Exception as e:
         logger.error(f"Failed to load config file: {e}")
-        logger.info("Using configuration from environment variables only")
     
+    # Define the final config with defaults from file config first
+    config = {
+        "twitch": {
+            "client_id": os.environ.get("TWITCH_CLIENT_ID", file_config.get("twitch", {}).get("client_id", "")),
+            "client_secret": os.environ.get("TWITCH_CLIENT_SECRET", file_config.get("twitch", {}).get("client_secret", "")),
+            "channel_name": os.environ.get("TWITCH_CHANNEL_NAME", file_config.get("twitch", {}).get("channel_name", ""))
+        },
+        "discord": {
+            "webhook_url": os.environ.get("DISCORD_WEBHOOK_URL", file_config.get("discord", {}).get("webhook_url", ""))
+        },
+        "notification": {
+            "message_template": os.environ.get(
+                "NOTIFICATION_MESSAGE_TEMPLATE", 
+                file_config.get("notification", {}).get("message_template", "🔴 **LIVE NOW!** {streamer} is streaming {game}")
+            ),
+            "content_text": os.environ.get("NOTIFICATION_CONTENT_TEXT", file_config.get("notification", {}).get("content_text", "")),
+            "include_title": os.environ.get("NOTIFICATION_INCLUDE_TITLE", str(file_config.get("notification", {}).get("include_title", True))).lower() == "true",
+            "include_game": os.environ.get("NOTIFICATION_INCLUDE_GAME", str(file_config.get("notification", {}).get("include_game", True))).lower() == "true",
+            "include_viewer_count": os.environ.get("NOTIFICATION_INCLUDE_VIEWER_COUNT", str(file_config.get("notification", {}).get("include_viewer_count", True))).lower() == "true",
+            "include_thumbnail": os.environ.get("NOTIFICATION_INCLUDE_THUMBNAIL", str(file_config.get("notification", {}).get("include_thumbnail", True))).lower() == "true",
+            "include_channel_link": os.environ.get("NOTIFICATION_INCLUDE_CHANNEL_LINK", str(file_config.get("notification", {}).get("include_channel_link", True))).lower() == "true",
+            "embed_color": os.environ.get("NOTIFICATION_EMBED_COLOR", file_config.get("notification", {}).get("embed_color", "FF0000")),
+            "notify_on_game_change": os.environ.get("NOTIFICATION_NOTIFY_ON_GAME_CHANGE", str(file_config.get("notification", {}).get("notify_on_game_change", False))).lower() == "true"
+        },
+        "polling": {
+            "interval_seconds": int(os.environ.get("POLLING_INTERVAL_SECONDS", str(file_config.get("polling", {}).get("interval_seconds", 60)))),
+            "offline_check_multiplier": int(os.environ.get("POLLING_OFFLINE_CHECK_MULTIPLIER", str(file_config.get("polling", {}).get("offline_check_multiplier", 3)))),
+            "notification_cooldown_minutes": int(os.environ.get("POLLING_NOTIFICATION_COOLDOWN_MINUTES", str(file_config.get("polling", {}).get("notification_cooldown_minutes", 15))))
+        },
+        "advanced": {
+            "viewer_milestone_notifications": [int(x) for x in os.environ.get(
+                "ADVANCED_VIEWER_MILESTONE_NOTIFICATIONS", 
+                ",".join(str(x) for x in file_config.get("advanced", {}).get("viewer_milestone_notifications", [50, 100, 500, 1000]))
+            ).split(",") if x.strip()],
+            "silent_mode": os.environ.get("ADVANCED_SILENT_MODE", str(file_config.get("advanced", {}).get("silent_mode", False))).lower() == "true"
+        }
+    }
+    
+    logger.info("Final configuration: Environment variables override file configuration")
     return config
 
 
