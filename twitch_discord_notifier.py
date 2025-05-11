@@ -29,6 +29,27 @@ class TwitchAPI:
     BASE_URL = "https://api.twitch.tv/helix"
     AUTH_URL = "https://id.twitch.tv/oauth2/token"
     
+    def check_network_connectivity(self, timeout=5):
+        """Check if the network is available by pinging common DNS servers"""
+        import socket
+        
+        test_hosts = [
+            "8.8.8.8",      # Google DNS
+            "1.1.1.1",      # Cloudflare DNS
+            "api.twitch.tv" # Twitch API
+        ]
+        
+        for host in test_hosts:
+            try:
+                # Try to create a socket connection to the host
+                socket.create_connection((host, 80), timeout=timeout)
+                return True
+            except (socket.timeout, socket.gaierror, socket.herror, socket.error):
+                continue
+        
+        logger.warning("Network connectivity check failed - no internet connection")
+        return False
+    
     def __init__(self, client_id: str, client_secret: str, debug_api: bool = False):
         self.client_id = client_id
         self.client_secret = client_secret
@@ -85,48 +106,77 @@ class TwitchAPI:
             raise
     
     def get_stream_info(self, channel_name: str) -> Optional[Dict[str, Any]]:
-        """Get stream information for a channel"""
-        self.authenticate()  # Ensure we have a valid token
+        """Get stream information for a channel with improved retry logic"""
+        max_retries = 3
+        retry_delay = 5  # seconds
+        attempt = 0
         
-        headers = {
-            'Client-ID': self.client_id,
-            'Authorization': f'Bearer {self.access_token}'
-        }
-        
-        try:
-            request_url = f"{self.BASE_URL}/streams"
-            request_params = {'user_login': channel_name}
+        while attempt < max_retries:
+            try:
+                self.authenticate()  # Ensure we have a valid token
+                
+                headers = {
+                    'Client-ID': self.client_id,
+                    'Authorization': f'Bearer {self.access_token}'
+                }
+                
+                request_url = f"{self.BASE_URL}/streams"
+                request_params = {'user_login': channel_name}
+                
+                if self.debug_api:
+                    logger.info(f"Stream info request to: {request_url}")
+                    logger.info(f"Stream info headers: {headers}")
+                    logger.info(f"Stream info params: {request_params}")
+                
+                response = requests.get(
+                    request_url,
+                    headers=headers,
+                    params=request_params,
+                    timeout=10  # Add a timeout to prevent hanging
+                )
+                response.raise_for_status()
+                data = response.json()
+                
+                # If data is empty, stream is offline
+                if not data['data']:
+                    return None
+                
+                # Return the stream info
+                return data['data'][0]
             
-            if self.debug_api:
-                logger.info(f"Stream info request to: {request_url}")
-                logger.info(f"Stream info headers: {headers}")
-                logger.info(f"Stream info params: {request_params}")
-            
-            response = requests.get(
-                request_url,
-                headers=headers,
-                params=request_params
-            )
-            response.raise_for_status()
-            data = response.json()
-            
-            # If data is empty, stream is offline
-            if not data['data']:
-                return None
-            
-            # Return the stream info
-            return data['data'][0]
-        except requests.RequestException as e:
-            error_msg = f"Error fetching stream info: {e}"
-            if hasattr(e, 'response') and e.response is not None:
-                try:
-                    error_details = e.response.json()
-                    error_msg += f" - Details: {error_details}"
-                except:
-                    if e.response.text:
-                        error_msg += f" - Response: {e.response.text[:200]}"
-            logger.error(error_msg)
-            return None
+            except requests.exceptions.ConnectionError as e:
+                attempt += 1
+                if "Failed to resolve" in str(e) or "NameResolutionError" in str(e):
+                    logger.warning(f"DNS resolution error (attempt {attempt}/{max_retries}): {e}")
+                else:
+                    logger.warning(f"Connection error (attempt {attempt}/{max_retries}): {e}")
+                
+                if attempt < max_retries:
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    logger.error(f"Error fetching stream info after {max_retries} attempts: {e}")
+                    return None
+                    
+            except requests.RequestException as e:
+                error_msg = f"Error fetching stream info: {e}"
+                if hasattr(e, 'response') and e.response is not None:
+                    try:
+                        error_details = e.response.json()
+                        error_msg += f" - Details: {error_details}"
+                    except:
+                        if e.response.text:
+                            error_msg += f" - Response: {e.response.text[:200]}"
+                logger.error(error_msg)
+                
+                attempt += 1
+                if attempt < max_retries:
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    return None
 
 
 class TwitchStreamInfo:
@@ -463,6 +513,12 @@ def main():
     try:
         while True:
             try:
+                # Check network connectivity before making API calls
+                if not twitch_api.check_network_connectivity():
+                    logger.warning("No network connectivity detected, waiting 60 seconds before retry...")
+                    time.sleep(60)  # Wait a minute before trying again
+                    continue
+                    
                 # Check if stream is online
                 stream_data = twitch_api.get_stream_info(config['twitch']['channel_name'])
                 

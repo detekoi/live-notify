@@ -21,3 +21,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 .aider*
+output.log
+error.log
+twitch_discord_notifier_launcher.sh
+
+# User-specific environment files
+launchd.error.log
+launchd.output.log
+com.user.twitch-discord-notifier.plist
+watchdog.log
